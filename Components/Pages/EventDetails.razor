@@ -1,0 +1,79 @@
+@page "/events/{Id:int}"
+@inject UserSessionState Session
+@inject EventAttendanceService Attendance
+
+<PageTitle>@(eventItem?.Name ?? "Event not found") | EventEase</PageTitle>
+
+@if (eventItem is null)
+{
+    <h1>Event not found</h1>
+    <a href="/">Browse all events</a>
+}
+else
+{
+    <article class="event-details">
+        <p class="eyebrow">EVENT DETAILS</p>
+        <img class="event-detail__image" src="@eventItem.ImageUrl" alt="@eventItem.Category event" />
+        <div class="event-detail__heading">
+            <span class="category-tag">@eventItem.Category</span>
+            <h1>@eventItem.Name</h1>
+        </div>
+        <dl>
+            <div><dt>Date</dt><dd>@eventItem.Date.ToString("MMMM d, yyyy")</dd></div>
+            <div><dt>Location</dt><dd>@eventItem.Location</dd></div>
+        </dl>
+        <p>@eventItem.Description</p>
+        @if (attendanceSummary is not null)
+        {
+            <p class="attendance-counts">
+                @attendanceSummary.RegisteredCount registered · @attendanceSummary.AttendedCount checked in
+            </p>
+        }
+        @if (Session.Email is not null && Attendance.IsRegistered(Id, Session.Email))
+        {
+            @if (Attendance.IsAttended(Id, Session.Email))
+            {
+                <p class="attendance-confirmation" role="status">Attendance confirmed for @Session.Name.</p>
+            }
+            else
+            {
+                <button class="btn btn-primary" type="button" @onclick="CheckIn">Check in</button>
+            }
+        }
+        <div class="event-details__actions">
+            @if (!Session.IsRegistered(eventItem.Id))
+            {
+                <a class="btn btn-primary" href="/events/@eventItem.Id/register">Register for this event</a>
+            }
+            <a href="/">Back to events</a>
+        </div>
+    </article>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private EventItem? eventItem;
+    private AttendanceSummary? attendanceSummary;
+
+    protected override void OnParametersSet()
+    {
+        eventItem = EventCatalog.GetEvent(Id);
+        attendanceSummary = eventItem is null ? null : Attendance.GetSummary(eventItem);
+    }
+
+    private void CheckIn()
+    {
+        if (Session.Email is null || !Attendance.CheckIn(Id, Session.Email))
+        {
+            return;
+        }
+
+        Session.RecordAttendance(Id);
+        if (eventItem is not null)
+        {
+            attendanceSummary = Attendance.GetSummary(eventItem);
+        }
+    }
+}

@@ -1,0 +1,23 @@
+﻿@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <header class="top-row">
+            <span class="top-row__label">EVENTEASE <span>/</span> OPERATIONS</span>
+            <span class="top-row__environment">LOCAL PREVIEW</span>
+        </header>
+        <div class="content">
+            @Body
+        </div>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>

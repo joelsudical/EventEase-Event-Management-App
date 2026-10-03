@@ -1,0 +1,94 @@
+@page "/events/{Id:int}/register"
+@inject UserSessionState Session
+@inject EventAttendanceService Attendance
+
+<PageTitle>Register | EventEase</PageTitle>
+
+@if (eventItem is null)
+{
+    <h1>Event not found</h1>
+    <a href="/">Browse all events</a>
+}
+else if (submitted)
+{
+    <section class="registration-page">
+        <p class="eyebrow">REGISTRATION COMPLETE</p>
+        <h1>You're on the list, @registration.Name.</h1>
+        @if (alreadyRegistered)
+        {
+            <p>This email is already registered for @eventItem.Name. Your attendee session is active.</p>
+        }
+        else
+        {
+            <p>We look forward to seeing you at @eventItem.Name.</p>
+        }
+        <p class="session-note">Signed in as @Session.Email. Your session continues as you browse.</p>
+        <a href="/events/@eventItem.Id">View event and check in</a>
+        <a href="/">Browse more events</a>
+    </section>
+}
+else
+{
+    <section class="registration-page">
+        <p class="eyebrow">EVENT REGISTRATION</p>
+        <h1>@eventItem.Name</h1>
+        <p>@eventItem.Date.ToString("MMMM d, yyyy") · @eventItem.Location</p>
+
+        <EditForm Model="registration" OnValidSubmit="SubmitRegistration" FormName="@($"registration-{Id}")">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <label>
+                <span>Your name</span>
+                <InputText @bind-Value="registration.Name" autocomplete="name" />
+                <ValidationMessage For="() => registration.Name" />
+            </label>
+            <label>
+                <span>Email address</span>
+                <InputText @bind-Value="registration.Email" type="email" autocomplete="email" />
+                <ValidationMessage For="() => registration.Email" />
+            </label>
+            <button class="btn btn-primary" type="submit">Complete registration</button>
+        </EditForm>
+        <a href="/events/@eventItem.Id">Back to event details</a>
+    </section>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private EventItem? eventItem;
+    private RegistrationForm registration = new();
+    private bool submitted;
+    private bool alreadyRegistered;
+    private int currentEventId;
+
+    protected override void OnParametersSet()
+    {
+        eventItem = EventCatalog.GetEvent(Id);
+        if (currentEventId != Id)
+        {
+            currentEventId = Id;
+            registration = new RegistrationForm();
+            submitted = Session.IsRegistered(Id);
+            alreadyRegistered = submitted;
+            if (submitted)
+            {
+                registration.Name = Session.Name ?? string.Empty;
+                registration.Email = Session.Email ?? string.Empty;
+            }
+        }
+    }
+
+    private void SubmitRegistration()
+    {
+        if (eventItem is null)
+        {
+            return;
+        }
+
+        alreadyRegistered = !Attendance.TryRegister(eventItem, registration.Name, registration.Email);
+        Session.RecordRegistration(Id, registration.Name, registration.Email);
+        submitted = true;
+    }
+}

@@ -1,0 +1,39 @@
+@page "/attendance"
+@inject EventAttendanceService AttendanceService
+
+<PageTitle>Attendance | EventEase</PageTitle>
+
+<section class="attendance-page">
+    <header class="events-heading">
+        <div>
+            <p class="eyebrow">EVENTEASE</p>
+            <h1>Attendance overview</h1>
+            <p>Registration and check-in totals across upcoming events.</p>
+        </div>
+        <p class="event-count">@summaries.Length.ToString("N0") events tracked</p>
+    </header>
+
+    <div class="attendance-list">
+        <Virtualize Items="summaries" Context="summary" ItemSize="88" OverscanCount="3">
+            <article @key="summary.EventId" class="attendance-row">
+                <div>
+                    <h2>@summary.EventName</h2>
+                    <p>@summary.Date.ToString("MMM d, yyyy") · @summary.Location</p>
+                </div>
+                <dl>
+                    <div><dt>Registered</dt><dd>@summary.RegisteredCount</dd></div>
+                    <div><dt>Checked in</dt><dd>@summary.AttendedCount</dd></div>
+                </dl>
+            </article>
+        </Virtualize>
+    </div>
+</section>
+
+@code {
+    private AttendanceSummary[] summaries = [];
+
+    protected override void OnInitialized()
+    {
+        summaries = AttendanceService.GetSummaries(EventCatalog.GetEvents(EventCatalog.MaxEvents));
+    }
+}

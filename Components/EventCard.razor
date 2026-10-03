@@ -1,0 +1,102 @@
+@if (isEditing)
+{
+    <article class="event-card event-card--editing">
+        <img class="event-card__image" src="@Event.ImageUrl" alt="" loading="lazy" />
+        <div class="event-card__editor">
+            <p class="eyebrow">EDIT EVENT DETAILS</p>
+            <EditForm Model="draftEvent" OnValidSubmit="SaveChanges" FormName="@($"event-{Event.Id}")">
+                <DataAnnotationsValidator />
+                <div class="event-card__form-grid">
+                    <label>
+                        <span>Event name</span>
+                        <InputText aria-label="Event name" @bind-Value="draftEvent.Name" />
+                        <ValidationMessage For="@(() => draftEvent.Name)" />
+                    </label>
+                    <label>
+                        <span>Date</span>
+                        <InputDate aria-label="Event date" @bind-Value="draftEvent.Date" />
+                        <ValidationMessage For="@(() => draftEvent.Date)" />
+                    </label>
+                    <label>
+                        <span>Location</span>
+                        <InputText aria-label="Event location" @bind-Value="draftEvent.Location" />
+                        <ValidationMessage For="@(() => draftEvent.Location)" />
+                    </label>
+                </div>
+                <footer class="event-card__editor-actions">
+                    <button class="button button--primary" type="submit">Save changes</button>
+                    <button class="button button--text" type="button" @onclick="DiscardChanges">Cancel</button>
+                </footer>
+            </EditForm>
+        </div>
+    </article>
+}
+else
+{
+    <article class="event-card">
+        <img class="event-card__image" src="@Event.ImageUrl" alt="@Event.Category event" loading="lazy" />
+        <div class="event-card__content">
+            <div class="event-card__meta">
+                <span class="category-tag">@Event.Category</span>
+                <time datetime="@Event.Date.ToString("yyyy-MM-dd")">@Event.Date.ToString("ddd, MMM d")</time>
+            </div>
+            <h2>@Event.Name</h2>
+            <p class="event-card__description">@Event.Description</p>
+            <p class="event-card__location">@Event.Location</p>
+        </div>
+        <div class="event-card__actions">
+            <a class="button button--primary" href="/events/@Event.Id/register">Register</a>
+            <a class="button button--quiet" href="/events/@Event.Id">Details</a>
+            <button class="button button--text" type="button" @onclick="BeginEditing">Edit</button>
+        </div>
+    </article>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public EventItem Event { get; set; } = default!;
+
+    private EventItem sourceEvent = default!;
+    private EventItem draftEvent = default!;
+    private bool isEditing;
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(sourceEvent, Event))
+        {
+            sourceEvent = Event;
+            draftEvent = CopyEvent(Event);
+        }
+    }
+
+    private void SaveChanges()
+    {
+        Event.Name = draftEvent.Name;
+        Event.Date = draftEvent.Date;
+        Event.Location = draftEvent.Location;
+        isEditing = false;
+    }
+
+    private void BeginEditing()
+    {
+        draftEvent = CopyEvent(Event);
+        isEditing = true;
+    }
+
+    private void DiscardChanges()
+    {
+        draftEvent = CopyEvent(Event);
+        isEditing = false;
+    }
+
+    private static EventItem CopyEvent(EventItem eventItem) => new()
+    {
+        Id = eventItem.Id,
+        Name = eventItem.Name,
+        Date = eventItem.Date,
+        Location = eventItem.Location,
+        Description = eventItem.Description,
+        Category = eventItem.Category,
+        ImageUrl = eventItem.ImageUrl
+    };
+}

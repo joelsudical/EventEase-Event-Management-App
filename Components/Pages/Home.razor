@@ -1,0 +1,98 @@
+﻿@page "/"
+@inject EventAttendanceService AttendanceService
+
+<PageTitle>Events | EventEase</PageTitle>
+
+<section class="events-page">
+	<header class="events-heading">
+		<div>
+			<p class="eyebrow">EVENT OPERATIONS</p>
+			<h1>Discover events</h1>
+			<p>Find the right room, people, and ideas for what comes next.</p>
+		</div>
+		<a class="button button--quiet" href="/attendance">View attendance</a>
+	</header>
+
+	<section class="metrics-strip" aria-label="Event overview">
+		<div class="metric-item">
+			<span>IN THE CATALOG</span>
+			<strong>@events.Count.ToString("N0")</strong>
+			<small>events</small>
+		</div>
+		<div class="metric-item">
+			<span>REGISTRATIONS</span>
+			<strong>@registrationCount.ToString("N0")</strong>
+			<small>attendees</small>
+		</div>
+		<div class="metric-item">
+			<span>CHECK-INS</span>
+			<strong>@attendanceCount.ToString("N0")</strong>
+			<small>confirmed</small>
+		</div>
+	</section>
+
+	<div class="event-toolbar">
+		<label class="search-field">
+			<span class="visually-hidden">Search events</span>
+			<input type="search" placeholder="Search by event or location" aria-label="Search events" @bind="searchQuery" @bind:event="oninput" @bind:after="ApplyFilters" />
+		</label>
+		<label class="category-filter">
+			<span class="visually-hidden">Filter by category</span>
+			<select aria-label="Filter by category" @bind="selectedCategory" @bind:after="ApplyFilters">
+				<option value="All categories">All categories</option>
+				@foreach (var category in categories)
+				{
+					<option value="@category">@category</option>
+				}
+			</select>
+		</label>
+		<p class="event-count">@visibleEvents.Count.ToString("N0") results</p>
+	</div>
+
+	<div class="event-list">
+		@if (visibleEvents.Count == 0)
+		{
+			<div class="empty-state">
+				<h2>No events match those filters</h2>
+				<p>Try a different search or category.</p>
+			</div>
+		}
+		else
+		{
+			<Virtualize Items="visibleEvents" Context="eventItem" ItemSize="256" OverscanCount="3">
+			<div @key="eventItem.Id" class="event-list__item">
+				<EventCard Event="eventItem" />
+			</div>
+			</Virtualize>
+		}
+	</div>
+</section>
+
+@code {
+	private readonly List<EventItem> events = EventCatalog.GetEvents(EventCatalog.MaxEvents);
+	private readonly string[] categories = ["Conference", "Community", "Reception"];
+	private List<EventItem> visibleEvents = [];
+	private string searchQuery = string.Empty;
+	private string selectedCategory = "All categories";
+	private int registrationCount;
+	private int attendanceCount;
+
+	protected override void OnInitialized()
+	{
+		ApplyFilters();
+		var summaries = AttendanceService.GetSummaries(events);
+		registrationCount = summaries.Sum(summary => summary.RegisteredCount);
+		attendanceCount = summaries.Sum(summary => summary.AttendedCount);
+	}
+
+	private void ApplyFilters()
+	{
+		var query = searchQuery.Trim();
+		visibleEvents = events
+			.Where(eventItem => selectedCategory == "All categories" || eventItem.Category == selectedCategory)
+			.Where(eventItem => query.Length == 0 ||
+				eventItem.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+				eventItem.Location.Contains(query, StringComparison.OrdinalIgnoreCase))
+			.ToList();
+	}
+}

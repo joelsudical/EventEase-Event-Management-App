@@ -1,0 +1,59 @@
+﻿@implements IDisposable
+@inject UserSessionState Session
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+            <a class="navbar-brand" href="">
+                <span class="brand-mark" aria-hidden="true">E</span>
+                <span class="brand-wordmark">EventEase<br /><small>EVENT OPERATIONS</small></span>
+            </a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Events
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="attendance">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Attendance
+            </NavLink>
+        </div>
+    </nav>
+
+    <section class="nav-session" aria-live="polite">
+        @if (Session.Name is null)
+        {
+                <p class="nav-session__label">WORKSPACE</p>
+                <strong>Guest mode</strong>
+                <span>Session inactive</span>
+        }
+        else
+        {
+            <p class="nav-session__label">ATTENDEE SESSION</p>
+            <strong>@Session.Name</strong>
+            <span>@Session.RegisteredEventCount registered event@(Session.RegisteredEventCount == 1 ? "" : "s")</span>
+            <button type="button" @onclick="Session.EndSession" @onclick:stopPropagation="true">End session</button>
+        }
+    </section>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Session.Changed += RefreshSession;
+    }
+
+    private void RefreshSession() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Session.Changed -= RefreshSession;
+    }
+}
+

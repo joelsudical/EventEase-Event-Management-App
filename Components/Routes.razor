@@ -1,0 +1,17 @@
+﻿<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(Layout.MainLayout)">
+            <PageTitle>Page not found | EventEase</PageTitle>
+            <section class="event-details">
+                <p class="eyebrow">404</p>
+                <h1>Page not found</h1>
+                <p>The page you requested does not exist.</p>
+                <a href="/">Browse upcoming events</a>
+            </section>
+        </LayoutView>
+    </NotFound>
+</Router>
